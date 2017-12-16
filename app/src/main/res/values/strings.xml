@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <string name="app_name">HappyTogether</string>
+    <string name="title_home">Home</string>
+    <string name="title_login">Login</string>
+    <string name="title_register">Register</string>
+    <string name="email_holder">Email</string>
+    <string name="pass_holder">Password</string>
+    <string name="submit">Submit</string>
+    <item name="visible" type="id"/>
+    <item name="masked" type="id"/>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>

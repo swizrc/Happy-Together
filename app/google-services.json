@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "756817178360",
+    "firebase_url": "https://happytogether-6bd92.firebaseio.com",
+    "project_id": "happytogether-6bd92",
+    "storage_bucket": "happytogether-6bd92.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:756817178360:android:97188e6804e7051f",
+        "android_client_info": {
+          "package_name": "com.itschner.sam.happytogether"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "756817178360-q3ai40uqvcocqss1ft69mbh5ctnaqtnc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.itschner.sam.happytogether",
+            "certificate_hash": "6b89f3484bf652024a540d552e2b59793e115d20"
+          }
+        },
+        {
+          "client_id": "756817178360-77efhllpfgkgo8vf20qmb5haf1oqf59i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpu6LxlL7UgNv-TuComalpJQp-WNv1P40"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "756817178360-77efhllpfgkgo8vf20qmb5haf1oqf59i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
