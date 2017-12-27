@@ -1,9 +1,11 @@
 package com.itschner.sam.happytogether;
 
 import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.view.View;
@@ -11,11 +13,39 @@ import android.widget.TextView;
 import android.content.Intent;
 import android.widget.Toast;
 
+
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 
 public class MainActivity extends Template {
 
     private Boolean oneShot = false;
+    private FirebaseDatabase database;
+    private DatabaseReference databaseReference;
+    private BottomNavigationView navigation;
+
+    public void getCurrentUserID(){
+        Query query = databaseReference.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Iterable<DataSnapshot> children = dataSnapshot.getChildren();
+                for (DataSnapshot singleSnapshot : children){
+                    User user = singleSnapshot.getValue(User.class);
+                    //Uri.setText(user.getUserID());
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -36,10 +66,38 @@ public class MainActivity extends Template {
         }
     };
 
-    public void FragmentChange(){
-        Fragment fragment;
+    public void FragmentChange(final int frag_id){
+        if(firebaseAuth.getCurrentUser() != null) {
+            Query query = databaseReference.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
+            query.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    Iterable<DataSnapshot> children = dataSnapshot.getChildren();
+                    for (DataSnapshot singleSnapshot : children) {
+                        User user = singleSnapshot.getValue(User.class);
+                        if (user.Fname != null && user.Lname != null) {
+                            Fragment fragment = new LoggedInNewFragment();
+                            android.app.FragmentManager fm = getFragmentManager();
+                            FragmentTransaction ft = fm.beginTransaction();
+                            ft.replace(frag_id, fragment);
+                            ft.commit();
+                        }
+                        else {
+                            Fragment fragment = new UserFormFragment();
+                            android.app.FragmentManager fm = getFragmentManager();
+                            FragmentTransaction ft = fm.beginTransaction();
+                            ft.replace(frag_id, fragment);
+                            ft.commit();
+                        }
+                    }
+                }
 
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
 
+                }
+            });
+        }
     }
 
     @Override
@@ -48,14 +106,17 @@ public class MainActivity extends Template {
         setContentView(R.layout.activity_main);
         setTitle("Happy Together");
         firebaseAuth = FirebaseAuth.getInstance();
-        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
+        database = FirebaseDatabase.getInstance();
+        databaseReference = database.getReference().child("users");
+
+        navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
     }
 
     @Override
     public void onResume(){
         super.onResume();
-        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
+        FragmentChange(R.id.fragment_place);
         if (firebaseAuth.getCurrentUser() == null && !oneShot){
             navigation.getMenu().removeItem(R.menu.logged_in_new);
             navigation.inflateMenu(R.menu.not_logged_in);

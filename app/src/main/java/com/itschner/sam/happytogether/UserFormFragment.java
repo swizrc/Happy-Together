@@ -1,5 +1,6 @@
 package com.itschner.sam.happytogether;
 
+import android.app.Fragment;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -15,7 +16,6 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.media.ExifInterface;
-import android.support.v4.app.Fragment;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.view.Gravity;
@@ -85,7 +85,7 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
                 Iterable<DataSnapshot> children = dataSnapshot.getChildren();
                 for (DataSnapshot singleSnapshot : children){
                     User user = singleSnapshot.getValue(User.class);
-                    Uri.setText(user.getUserID());
+                    //Uri.setText(user.getUserID());
                 }
             }
             @Override
@@ -94,10 +94,6 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
             }
         });
     }
-
-    /*public String getUserIDbyEmail(String email){
-        Query query = databaseReference.orderByChild("email").equalTo(email);
-    }*/
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -190,10 +186,11 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
         uploadButton.setOnClickListener(this);
 
         //Resizes the fragment to fit into its layout
+        /*
         View newView = getView();
         RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
         newView.setLayoutParams(p);
-        newView.requestLayout();
+        newView.requestLayout();*/
     }
 
     @Override
@@ -368,12 +365,12 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
         }
         else if(view == uploadButton){
             if (!nameEditText.getText().toString().isEmpty()){
-                //uploadPic("profile");
-                //createNewUser();
+                uploadPic("profile");
+                createNewUser();
                 //DatabaseReference ref = databaseReference;
                 //ref = ref.child("-L0LnzDbOhM_VHvGTQdf").child("pending").child("0");
                 //ref.setValue("Updated");
-                getCurrentUserID();
+                //getCurrentUserID();
             }
         }
     }
