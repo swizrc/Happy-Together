@@ -23,10 +23,13 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SimpleTimeZone;
 
 public class LoggedInNewFragment extends Fragment implements View.OnClickListener {
 
@@ -34,6 +37,8 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
     private DatabaseReference firebaseDatabase;
     private DatabaseReference ref;
     private FirebaseAuth firebaseAuth;
+    private Calendar c = Calendar.getInstance();
+    private SimpleDateFormat df = new SimpleDateFormat("yy-MM-dd HH-mm-ss");
 
     public LoggedInNewFragment() {
         // Required empty public constructor
@@ -84,7 +89,7 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
 
     public void InviteAlert(){
         ref = firebaseDatabase.child("users");
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        final AlertDialog dialog = new AlertDialog.Builder(getActivity()).create();
         LayoutInflater inflater = LayoutInflater.from(getActivity());
         View view = inflater.inflate(R.layout.dialog_invite_form,null);
         final EditText email = (EditText) view.findViewById(R.id.inviteEmail);
@@ -93,7 +98,10 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
             @Override
             public void onClick(View view) {
                 if(!email.getText().toString().isEmpty()){
+                    //Probably not working because of casting to User does not work because of missing pending list
+                    //Probably going to have to use an update or enter dummy values upon user creation
                     String emailText = email.getText().toString();
+                    final String date = df.format(c.getTime());
                     Query query = ref.orderByChild("email").equalTo(emailText);
                     query.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
@@ -102,8 +110,10 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
                             for(DataSnapshot singleSnapshot : children){
                                 User recUser = singleSnapshot.getValue(User.class);
                                 ref = ref.child(recUser.userID).child("pending");
-                                ref.push().setValue(firebaseAuth.getCurrentUser().getEmail());
+                                ref.child(date).setValue(firebaseAuth.getCurrentUser().getEmail());
+                                Toast.makeText(getContext(), "Sent", Toast.LENGTH_SHORT).show();
                             }
+                            dialog.dismiss();
                         }
                         @Override
                         public void onCancelled(DatabaseError databaseError) {
@@ -116,8 +126,7 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
                 }
             }
         });
-        builder.setView(view);
-        AlertDialog dialog = builder.create();
+        dialog.setView(view);
         dialog.show();
     }
 
