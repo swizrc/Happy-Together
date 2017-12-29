@@ -7,6 +7,8 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
@@ -47,6 +49,17 @@ public class MainActivity extends Template {
         });
     }
 
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu){
+        if (firebaseAuth.getCurrentUser()!=null && menu.findItem(R.id.action_logout)==null){
+            MenuInflater inflater = getMenuInflater();
+            inflater.inflate(R.menu.logout,menu);}
+        if (menu.findItem(R.id.action_logout)!=null && firebaseAuth.getCurrentUser()==null){
+            menu.removeItem(R.id.action_logout);
+        }
+        return true;
+    }
+
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
         @Override
@@ -75,7 +88,7 @@ public class MainActivity extends Template {
                     Iterable<DataSnapshot> children = dataSnapshot.getChildren();
                     for (DataSnapshot singleSnapshot : children) {
                         User user = singleSnapshot.getValue(User.class);
-                        if (user.Fname != null && user.Lname != null) {
+                        if (user.Fname != null && user.Lname != null) {//Change back to != when done
                             Fragment fragment = new LoggedInNewFragment();
                             android.app.FragmentManager fm = getFragmentManager();
                             FragmentTransaction ft = fm.beginTransaction();
@@ -122,9 +135,14 @@ public class MainActivity extends Template {
             navigation.inflateMenu(R.menu.not_logged_in);
             navigation.setVisibility(View.VISIBLE);
             navigation.setActivated(true);
-            navigation.setSelectedItemId(R.id.navigation_login);
+            RedirectToLogin(this,firebaseAuth);
             Toast.makeText(this, "A user must be logged in", Toast.LENGTH_SHORT).show();
             oneShot = true;
+            if(oneShot){
+                setTitle("True");
+            }else{
+                setTitle("False");
+            }
         }
         else if(firebaseAuth.getCurrentUser() != null && oneShot){
             navigation.getMenu().removeItem(R.menu.not_logged_in);
@@ -132,6 +150,10 @@ public class MainActivity extends Template {
             navigation.setActivated(false);*/
             navigation.inflateMenu(R.menu.logged_in_new);
             oneShot = false;
+        }
+        else if(firebaseAuth.getCurrentUser() == null){
+            RedirectToLogin(this,firebaseAuth);
+            Toast.makeText(this, "A user must be logged in", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -147,6 +169,7 @@ public class MainActivity extends Template {
                 navigation.setVisibility(View.VISIBLE);
                 navigation.setActivated(true);
                 oneShot = true;
+                RedirectToLogin(this,firebaseAuth);
                 return true;
         }
         return false;

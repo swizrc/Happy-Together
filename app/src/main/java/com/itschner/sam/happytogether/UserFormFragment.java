@@ -1,5 +1,6 @@
 package com.itschner.sam.happytogether;
 
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -85,7 +86,7 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
                 Iterable<DataSnapshot> children = dataSnapshot.getChildren();
                 for (DataSnapshot singleSnapshot : children){
                     User user = singleSnapshot.getValue(User.class);
-                    //Uri.setText(user.getUserID());
+                    Uri.setText(user.getUserID());
                 }
             }
             @Override
@@ -163,6 +164,7 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         getActivity().setTitle("User Data Form");
+
         progressDialog = new ProgressDialog(getActivity());
         profileImage = (ImageView) getView().findViewById(R.id.profileImageView);
         nameEditText = (EditText) getView().findViewById(R.id.nameEditText);
@@ -355,7 +357,8 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
         return Bitmap.createBitmap(source,0,0,source.getWidth(),source.getHeight(),matrix,true);
     }
 
-    @Override
+
+        @Override
     public void onClick(View view) {
         if(view == galleryButton){
             showFileChooser();

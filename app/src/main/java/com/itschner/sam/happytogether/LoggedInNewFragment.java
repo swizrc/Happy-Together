@@ -10,6 +10,7 @@ import android.support.annotation.RequiresApi;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -21,6 +22,11 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class LoggedInNewFragment extends Fragment implements View.OnClickListener {
 
@@ -49,16 +55,37 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        firebaseDatabase = FirebaseDatabase.getInstance().getReference();
+        firebaseDatabase = FirebaseDatabase.getInstance().getReference("users");
         firebaseAuth = FirebaseAuth.getInstance();
-        inviteButton = (Button) getView().findViewById(R.id.invite_button);
+        inviteButton = (Button) getView().findViewById(R.id.inviteButton);
         getActivity().setTitle("Home");
+
+        inviteButton.setOnClickListener(this);
+        Query query = firebaseDatabase.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Iterable<DataSnapshot> children = dataSnapshot.getChildren();
+                for (DataSnapshot singleSnapshot : children){
+                    User user = singleSnapshot.getValue(User.class);
+
+                    List<String> invites = new ArrayList<>(user.pending.values());
+                    for (String invite:invites) {
+                        getActivity().setTitle(invite);
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
     public void InviteAlert(){
         ref = firebaseDatabase.child("users");
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity().getApplicationContext());
-        LayoutInflater inflater = LayoutInflater.from(getActivity().getApplicationContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        LayoutInflater inflater = LayoutInflater.from(getActivity());
         View view = inflater.inflate(R.layout.dialog_invite_form,null);
         final EditText email = (EditText) view.findViewById(R.id.inviteEmail);
         Button inviteButton = (Button) view.findViewById(R.id.sendInvite);
@@ -67,7 +94,7 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
             public void onClick(View view) {
                 if(!email.getText().toString().isEmpty()){
                     String emailText = email.getText().toString();
-                    Query query = ref.orderByChild("email").equalTo(emailText);//Users currently do not have email in database
+                    Query query = ref.orderByChild("email").equalTo(emailText);
                     query.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {
@@ -75,7 +102,7 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
                             for(DataSnapshot singleSnapshot : children){
                                 User recUser = singleSnapshot.getValue(User.class);
                                 ref = ref.child(recUser.userID).child("pending");
-                                ref.setValue(firebaseAuth.getCurrentUser().getEmail());
+                                ref.push().setValue(firebaseAuth.getCurrentUser().getEmail());
                             }
                         }
                         @Override
@@ -85,7 +112,7 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
                     });
                     //TODO: Add cancel button as well, get the email and query with it
                 }else {
-                    Toast.makeText(getActivity().getApplicationContext(), "Please Enter the user's email", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Please Enter the user's email", Toast.LENGTH_SHORT).show();
                 }
             }
         });

@@ -9,19 +9,34 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
+
+import org.w3c.dom.Text;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RegisterUser extends Template implements View.OnClickListener {
 
     private EditText emailText;
     private EditText passwordText;
     private Button submitButton;
+    private TextView loginText;
     private ProgressDialog progressDialog;
+
+    private List<Boolean> checkList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,8 +50,10 @@ public class RegisterUser extends Template implements View.OnClickListener {
         submitButton = (Button) findViewById(R.id.submit);
         passwordText = (EditText) findViewById(R.id.password);
         emailText = (EditText) findViewById(R.id.email);
+        loginText = findViewById(R.id.toLogin);
 
         submitButton.setOnClickListener(this);
+        loginText.setOnClickListener(this);
     }
 
     @Override
@@ -70,7 +87,7 @@ public class RegisterUser extends Template implements View.OnClickListener {
                 @Override
                 public void onComplete(@NonNull Task<AuthResult> task) {
                     if(task.isSuccessful()){
-                        Toast.makeText(RegisterUser.this, "Registered Sucessfully", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(RegisterUser.this, "Registered Successfully", Toast.LENGTH_SHORT).show();
                     }
                     else{
                         Toast.makeText(RegisterUser.this, "Register Failed", Toast.LENGTH_SHORT).show();
@@ -92,6 +109,12 @@ public class RegisterUser extends Template implements View.OnClickListener {
                     progressDialog.hide();
                 }
             });
+        }
+        else if(view == loginText){
+            finish();
+            Intent i = new Intent(this,Login.class);
+            startActivity(i);
+            overridePendingTransition(android.R.anim.fade_in,android.R.anim.fade_out);
         }
     }
 }

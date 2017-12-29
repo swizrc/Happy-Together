@@ -27,7 +27,8 @@
             android:layout_height="wrap_content"
             android:text="Send Invite"
             android:layout_marginTop="32dp"
-            android:id="@+id/invite_button"/>
+            android:id="@+id/inviteButton"/>
+
     </LinearLayout>
 
 </FrameLayout>

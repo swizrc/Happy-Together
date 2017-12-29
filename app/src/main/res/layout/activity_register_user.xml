@@ -52,7 +52,7 @@
             tools:layout_editor_absoluteY="285dp" />
 
         <TextView
-            android:id="@+id/textViewRegister"
+            android:id="@+id/toLogin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"

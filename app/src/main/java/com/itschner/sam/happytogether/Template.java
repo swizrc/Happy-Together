@@ -44,20 +44,24 @@ public abstract class Template extends AppCompatActivity {
     //Is called when invalidateoptionsmenu is called
     @Override
     public boolean onPrepareOptionsMenu(Menu menu){
-        if (firebaseAuth.getCurrentUser()!=null && menu.findItem(R.id.action_logout)==null){
-            MenuInflater inflater = getMenuInflater();
-            inflater.inflate(R.menu.logout,menu);}
-        if (menu.findItem(R.id.action_logout)!=null && firebaseAuth.getCurrentUser()==null){
-            menu.removeItem(R.id.action_logout);
+        if (firebaseAuth != null){
+            if (firebaseAuth.getCurrentUser()!=null && menu.findItem(R.id.action_logout)==null){
+                MenuInflater inflater = getMenuInflater();
+                inflater.inflate(R.menu.logout,menu);}
+
+            if (menu.findItem(R.id.action_logout)!=null && firebaseAuth.getCurrentUser()==null){
+                menu.removeItem(R.id.action_logout);
+            }
         }
         return true;
     }
 
     //Checks if user is logged in and redirects them
-    public void RedirectUserForm (AppCompatActivity activity,FirebaseAuth firebaseAuth){
+    public void RedirectToLogin (AppCompatActivity activity,FirebaseAuth firebaseAuth){
         if (firebaseAuth.getCurrentUser() == null){
             Intent i = new Intent(activity,Login.class);
             startActivity(i);
+            overridePendingTransition(android.R.anim.fade_in,android.R.anim.fade_out);
         }
     }
 

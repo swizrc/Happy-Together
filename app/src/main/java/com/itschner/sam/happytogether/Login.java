@@ -92,7 +92,7 @@ public class Login extends Template implements View.OnClickListener{
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
                 if (task.isSuccessful()){
-                    Toast.makeText(Login.this, "Login Sucessful", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Login.this, "Login Successful", Toast.LENGTH_SHORT).show();
                     NavUtils.navigateUpFromSameTask(Login.this);
                 }
                 else{
