@@ -136,7 +136,7 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
             Toast.makeText(getActivity(), "User not Logged In", Toast.LENGTH_SHORT).show();
         }
         else{
-            Toast.makeText(getActivity(), "Upload Failed", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), "Photo Not Uploaded", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -148,13 +148,13 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            //TODO
+                            Toast.makeText(getContext(), "User Successfully Created", Toast.LENGTH_SHORT).show();
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
                         @Override
                         public void onFailure(@NonNull Exception e) {
-                            //TODO
+                            Toast.makeText(getContext(), "User Creation Failed", Toast.LENGTH_SHORT).show();
                         }
                     });
         }

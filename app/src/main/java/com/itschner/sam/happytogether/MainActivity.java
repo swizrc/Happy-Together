@@ -86,21 +86,30 @@ public class MainActivity extends Template {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     Iterable<DataSnapshot> children = dataSnapshot.getChildren();
-                    for (DataSnapshot singleSnapshot : children) {
-                        User user = singleSnapshot.getValue(User.class);
-                        if (user.Fname != null && user.Lname != null) {//Change back to != when done
-                            Fragment fragment = new LoggedInNewFragment();
-                            android.app.FragmentManager fm = getFragmentManager();
-                            FragmentTransaction ft = fm.beginTransaction();
-                            ft.replace(frag_id, fragment);
-                            ft.commit();
-                        }
-                        else {
-                            Fragment fragment = new UserFormFragment();
-                            android.app.FragmentManager fm = getFragmentManager();
-                            FragmentTransaction ft = fm.beginTransaction();
-                            ft.replace(frag_id, fragment);
-                            ft.commit();
+                    if (dataSnapshot.getChildrenCount() == 0){
+                        Fragment fragment = new UserFormFragment();
+                        android.app.FragmentManager fm = getFragmentManager();
+                        FragmentTransaction ft = fm.beginTransaction();
+                        ft.replace(frag_id, fragment);
+                        ft.commit();
+                    }
+                    else{
+                        for (DataSnapshot singleSnapshot : children) {
+                            User user = singleSnapshot.getValue(User.class);
+                            if (user.Fname != null && user.Lname != null) {
+                                Fragment fragment = new LoggedInNewFragment();
+                                android.app.FragmentManager fm = getFragmentManager();
+                                FragmentTransaction ft = fm.beginTransaction();
+                                ft.replace(frag_id, fragment);
+                                ft.commit();
+                            }
+                            else {
+                                Fragment fragment = new UserFormFragment();
+                                android.app.FragmentManager fm = getFragmentManager();
+                                FragmentTransaction ft = fm.beginTransaction();
+                                ft.replace(frag_id, fragment);
+                                ft.commit();
+                            }
                         }
                     }
                 }

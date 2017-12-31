@@ -28,8 +28,10 @@ public class User{
         this.Lname = LastName.toString();
         this.status = false;
         this.partners = new HashMap<>();
+        this.partners.put("dummy","dummy");
         this.userID = userID;
         this.pending = new HashMap<>();
+        this.pending.put("dummy","dummy");
         this.email = email;
     }
 

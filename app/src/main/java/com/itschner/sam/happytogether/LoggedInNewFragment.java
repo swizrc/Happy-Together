@@ -3,6 +3,7 @@ package com.itschner.sam.happytogether;
 
 import android.app.AlertDialog;
 import android.app.Fragment;
+import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -38,7 +39,7 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
     private DatabaseReference ref;
     private FirebaseAuth firebaseAuth;
     private Calendar c = Calendar.getInstance();
-    private SimpleDateFormat df = new SimpleDateFormat("yy-MM-dd HH-mm-ss");
+    private SimpleDateFormat df = new SimpleDateFormat("yy-MM-dd HH:mm:ss");
 
     public LoggedInNewFragment() {
         // Required empty public constructor
@@ -66,6 +67,8 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
         getActivity().setTitle("Home");
 
         inviteButton.setOnClickListener(this);
+        //TESTING
+
         Query query = firebaseDatabase.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
         query.addValueEventListener(new ValueEventListener() {
             @Override
@@ -88,7 +91,8 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
     }
 
     public void InviteAlert(){
-        ref = firebaseDatabase.child("users");
+        ref = firebaseDatabase;
+        final Context context = getContext();
         final AlertDialog dialog = new AlertDialog.Builder(getActivity()).create();
         LayoutInflater inflater = LayoutInflater.from(getActivity());
         View view = inflater.inflate(R.layout.dialog_invite_form,null);
@@ -98,29 +102,37 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
             @Override
             public void onClick(View view) {
                 if(!email.getText().toString().isEmpty()){
-                    //Probably not working because of casting to User does not work because of missing pending list
-                    //Probably going to have to use an update or enter dummy values upon user creation
-                    String emailText = email.getText().toString();
+                    //FIXED
+                    final String emailText = email.getText().toString().trim();
                     final String date = df.format(c.getTime());
                     Query query = ref.orderByChild("email").equalTo(emailText);
                     query.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {
                             Iterable<DataSnapshot> children = dataSnapshot.getChildren();
-                            for(DataSnapshot singleSnapshot : children){
-                                User recUser = singleSnapshot.getValue(User.class);
-                                ref = ref.child(recUser.userID).child("pending");
-                                ref.child(date).setValue(firebaseAuth.getCurrentUser().getEmail());
-                                Toast.makeText(getContext(), "Sent", Toast.LENGTH_SHORT).show();
+                            if (dataSnapshot.getChildrenCount() == 0){
+                                Toast.makeText(context, "This user's email was not found", Toast.LENGTH_SHORT).show();
                             }
-                            dialog.dismiss();
+                            else {
+                                for (DataSnapshot singleSnapshot : children) {
+                                    if (!firebaseAuth.getCurrentUser().getEmail().contains(emailText)) {
+                                        User recUser = singleSnapshot.getValue(User.class);
+                                        ref = ref.child(recUser.userID).child("pending");
+                                        ref.child(date).setValue(firebaseAuth.getCurrentUser().getEmail());
+                                        Toast.makeText(context, "Sent", Toast.LENGTH_SHORT).show();
+                                        dialog.dismiss();
+                                    } else {
+                                        Toast.makeText(context, "Cannot send invite to self!", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            }
                         }
                         @Override
                         public void onCancelled(DatabaseError databaseError) {
 
                         }
                     });
-                    //TODO: Add cancel button as well, get the email and query with it
+                    //TODO: Add cancel button as well
                 }else {
                     Toast.makeText(getContext(), "Please Enter the user's email", Toast.LENGTH_SHORT).show();
                 }
