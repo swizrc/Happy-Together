@@ -21,10 +21,26 @@
         android:hint="User to invite (email)"
         android:inputType="textEmailAddress" />
 
-    <Button
-        android:id="@+id/sendInvite"
-        android:layout_marginTop="30dp"
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Send Invitation" />
+        android:orientation="horizontal"
+        android:layout_marginTop="26dp">
+
+        <Button
+            android:id="@+id/sendInvite"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Send Invitation" />
+
+        <Button
+            android:id="@+id/cancelButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Cancel" />
+    </LinearLayout>
+
 </LinearLayout>

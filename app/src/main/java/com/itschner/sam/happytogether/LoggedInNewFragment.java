@@ -4,18 +4,27 @@ package com.itschner.sam.happytogether;
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
+import android.support.media.ExifInterface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -23,23 +32,29 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FileDownloadTask;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.SimpleTimeZone;
 
 public class LoggedInNewFragment extends Fragment implements View.OnClickListener {
 
     private Button inviteButton;
+    private TextView userNameTextView;
+    private ImageView profileImageView;
     private DatabaseReference firebaseDatabase;
     private DatabaseReference ref;
     private FirebaseAuth firebaseAuth;
+    private StorageReference storageReference;
     private Calendar c = Calendar.getInstance();
-    private SimpleDateFormat df = new SimpleDateFormat("yy-MM-dd HH:mm:ss");
+    private SimpleDateFormat df = new SimpleDateFormat("yy/MM/dd HH:mm:ss");
 
     public LoggedInNewFragment() {
         // Required empty public constructor
@@ -61,33 +76,84 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        storageReference = FirebaseStorage.getInstance().getReference();
         firebaseDatabase = FirebaseDatabase.getInstance().getReference("users");
         firebaseAuth = FirebaseAuth.getInstance();
         inviteButton = (Button) getView().findViewById(R.id.inviteButton);
+        userNameTextView = getView().findViewById(R.id.userName);
+        profileImageView = getView().findViewById(R.id.profileImageView);
         getActivity().setTitle("Home");
 
+        StorageReference imageRef = storageReference.child(firebaseAuth.getCurrentUser().getEmail() + "/profile.jpg" );
+        //Download profile image
+        try{
+            final File tmpFile = File.createTempFile("img","jpg");
+            imageRef.getFile(tmpFile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                    Bitmap bitmap = BitmapFactory.decodeFile(tmpFile.getAbsolutePath());
+                    try{
+                        ExifInterface ei = new ExifInterface(tmpFile.getAbsolutePath());
+                        int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                                ExifInterface.ORIENTATION_UNDEFINED);
+                        switch (orientation) {
+                            case ExifInterface.ORIENTATION_ROTATE_90:
+                                bitmap = rotateImage(bitmap, 90);
+                                break;
+                            case ExifInterface.ORIENTATION_ROTATE_180:
+                                bitmap = rotateImage(bitmap, 180);
+                                break;
+                            case ExifInterface.ORIENTATION_ROTATE_270:
+                                bitmap = rotateImage(bitmap, 270);
+                                break;
+                            default:
+                        }
+                    }
+                    catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    profileImageView.setImageBitmap(bitmap);
+                }
+            });
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
         inviteButton.setOnClickListener(this);
-        //TESTING
 
-        Query query = firebaseDatabase.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
-        query.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                Iterable<DataSnapshot> children = dataSnapshot.getChildren();
-                for (DataSnapshot singleSnapshot : children){
-                    User user = singleSnapshot.getValue(User.class);
+        //TESTING for reading pending list
+        //{
+            Query query = firebaseDatabase.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
+            query.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    Iterable<DataSnapshot> children = dataSnapshot.getChildren();
+                    for (DataSnapshot singleSnapshot : children){
+                        User user = singleSnapshot.getValue(User.class);
 
-                    List<String> invites = new ArrayList<>(user.pending.values());
-                    for (String invite:invites) {
-                        getActivity().setTitle(invite);
+                        String Name = "Hello "+ user.Fname + " " +user.Lname + "!";
+                        userNameTextView.setText(Name);
+
+                        List<String> invites = new ArrayList<>(user.pending.values());
+                        for (String invite:invites) {
+                            if (!invite.contentEquals("dummy")){
+                                getActivity().setTitle(invite);
+                            }
+                        }
                     }
                 }
-            }
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
 
-            }
-        });
+                }
+            });
+        //}
+    }
+
+    public static Bitmap rotateImage(Bitmap source,float angle){
+        Matrix matrix = new Matrix();
+        matrix.postRotate(angle);
+        return Bitmap.createBitmap(source,0,0,source.getWidth(),source.getHeight(),matrix,true);
     }
 
     public void InviteAlert(){
@@ -98,6 +164,13 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
         View view = inflater.inflate(R.layout.dialog_invite_form,null);
         final EditText email = (EditText) view.findViewById(R.id.inviteEmail);
         Button inviteButton = (Button) view.findViewById(R.id.sendInvite);
+        Button cancelButton = (Button) view.findViewById(R.id.cancelButton);
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
         inviteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -121,7 +194,8 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
                                         ref.child(date).setValue(firebaseAuth.getCurrentUser().getEmail());
                                         Toast.makeText(context, "Sent", Toast.LENGTH_SHORT).show();
                                         dialog.dismiss();
-                                    } else {
+                                    }
+                                    else {
                                         Toast.makeText(context, "Cannot send invite to self!", Toast.LENGTH_SHORT).show();
                                     }
                                 }
@@ -132,7 +206,6 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
 
                         }
                     });
-                    //TODO: Add cancel button as well
                 }else {
                     Toast.makeText(getContext(), "Please Enter the user's email", Toast.LENGTH_SHORT).show();
                 }
