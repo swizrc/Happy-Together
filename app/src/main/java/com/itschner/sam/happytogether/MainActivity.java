@@ -2,6 +2,7 @@ package com.itschner.sam.happytogether;
 
 import android.app.Fragment;
 import android.app.FragmentTransaction;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -30,6 +31,7 @@ public class MainActivity extends Template {
     private FirebaseDatabase database;
     private DatabaseReference databaseReference;
     private BottomNavigationView navigation;
+
 
     public void getCurrentUserID(){
         Query query = databaseReference.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());

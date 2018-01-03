@@ -18,9 +18,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -49,6 +52,8 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
     private Button inviteButton;
     private TextView userNameTextView;
     private ImageView profileImageView;
+    private ListView pendingList;
+    private ListView partnerList;
     private DatabaseReference firebaseDatabase;
     private DatabaseReference ref;
     private FirebaseAuth firebaseAuth;
@@ -82,6 +87,9 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
         inviteButton = (Button) getView().findViewById(R.id.inviteButton);
         userNameTextView = getView().findViewById(R.id.userName);
         profileImageView = getView().findViewById(R.id.profileImageView);
+        pendingList = getView().findViewById(R.id.pendingListView);
+        partnerList = getView().findViewById(R.id.partnerListView);
+
         getActivity().setTitle("Home");
 
         StorageReference imageRef = storageReference.child(firebaseAuth.getCurrentUser().getEmail() + "/profile.jpg" );
@@ -135,11 +143,31 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
                         userNameTextView.setText(Name);
 
                         List<String> invites = new ArrayList<>(user.pending.values());
+                        List<String> partners = new ArrayList<>(user.partners.values());
+
                         for (String invite:invites) {
-                            if (!invite.contentEquals("dummy")){
-                                getActivity().setTitle(invite);
+                            if (invite.contentEquals("dummy")){
+                                invites.remove(invite);
                             }
                         }
+
+                        for (String partner:partners) {
+                            if (partner.contentEquals("dummy")){
+                                partners.remove(partner);
+                            }
+                        }
+
+                        String[] pendingArray = new String[invites.size()];
+                        pendingArray = invites.toArray(pendingArray);
+
+                        String[] partnerArray = new String[partners.size()];
+                        partnerArray = partners.toArray(partnerArray);
+
+                        ListAdapter pendingAdapter = new ArrayAdapter<>(getContext(),android.R.layout.simple_list_item_1,pendingArray);
+                        ListAdapter partnerAdapter = new ArrayAdapter<>(getContext(),android.R.layout.simple_list_item_1,partnerArray);
+
+                        partnerList.setAdapter(partnerAdapter);
+                        pendingList.setAdapter(pendingAdapter);
                     }
                 }
                 @Override

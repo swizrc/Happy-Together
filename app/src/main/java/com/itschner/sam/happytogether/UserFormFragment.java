@@ -68,6 +68,9 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
     private ImageView profileImage;
     private Uri filepath;
     private ProgressDialog progressDialog;
+    private static String savedName = "Full Name";
+    private static String savedURI = "default";
+    private static Bitmap picture;
 
     private StorageReference storageReference;
     private FirebaseAuth firebaseAuth;
@@ -187,6 +190,14 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
         cameraButton.setOnClickListener(this);
         uploadButton.setOnClickListener(this);
 
+        Uri.setText(savedURI);
+        nameEditText.setText(savedName);
+
+        if (picture != null){
+            profileImage.setImageBitmap(picture);
+            setPic(profileImage);
+        }
+
         //Resizes the fragment to fit into its layout
         /*
         View newView = getView();
@@ -208,6 +219,7 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
             File photoFile = null;
             try{
                 photoFile = createImageFile();
+
             }catch (IOException ex){
                 Toast.makeText(getActivity(), "Error while creating image", Toast.LENGTH_SHORT).show();
             }
@@ -306,16 +318,23 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
         if(requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null){
             filepath = data.getData();
-            Uri.setText(filepath.toString());
-            profileImage.setImageBitmap(rotateImage(filepath));
-            setPic(profileImage);
+            savedURI = filepath.toString();
+            savedName = nameEditText.getText().toString();
+            picture = rotateImage(filepath);
+            //Uri.setText(filepath.toString());
+            //profileImage.setImageBitmap(rotateImage(filepath));
+            //setPic(profileImage);
         }
         else if(requestCode == REQUEST_IMGAE_CAPTURE && resultCode == RESULT_OK){
-            profileImage.setImageBitmap(rotateImage(filepath));
-            setPic(profileImage);
-            Uri.setText(filepath.toString());
+            picture = rotateImage(filepath);
+            savedURI = filepath.toString();
+            savedName = nameEditText.getText().toString();
+            //profileImage.setImageBitmap(rotateImage(filepath));
+            //setPic(profileImage);
+            //Uri.setText(filepath.toString());
             /*
             Bundle extras = data.getExtras();
             Bitmap photo = (Bitmap) extras.get("data");
@@ -346,7 +365,7 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
             }
         }
         catch (IOException e){
-            Toast.makeText(getActivity(), "Nope", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), "Rotate Image Failed", Toast.LENGTH_SHORT).show();
         }
         return bitmap;
     }
