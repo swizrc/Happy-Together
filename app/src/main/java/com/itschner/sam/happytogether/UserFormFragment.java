@@ -66,11 +66,15 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
     private ImageButton cameraButton;
     private Button uploadButton;
     private ImageView profileImage;
-    private Uri filepath;
+    private static Uri filepath;
     private ProgressDialog progressDialog;
-    private static String savedName = "Full Name";
+    private static String savedName;
     private static String savedURI = "default";
     private static Bitmap picture;
+
+    private DoneVariable done;
+    private boolean userCreationDone;
+    private boolean photoUploadDone;
 
     private StorageReference storageReference;
     private FirebaseAuth firebaseAuth;
@@ -118,6 +122,8 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
                             //Get URL to uploaded Content
                             progressDialog.hide();
                             Toast.makeText(getActivity(), "Upload Successful", Toast.LENGTH_SHORT).show();
+                            photoUploadDone = true;
+                            done.setDone(userCreationDone,photoUploadDone);
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
@@ -138,8 +144,8 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
         else if (firebaseAuth.getCurrentUser() == null){
             Toast.makeText(getActivity(), "User not Logged In", Toast.LENGTH_SHORT).show();
         }
-        else{
-            Toast.makeText(getActivity(), "Photo Not Uploaded", Toast.LENGTH_SHORT).show();
+        else if (filepath == null){
+            Toast.makeText(getActivity(), "A profile picture is required", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -148,10 +154,12 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
             String userID = databaseReference.push().getKey();
             User newUser = new User(nameEditText.getText().toString(),userID,firebaseAuth.getCurrentUser().getEmail());
             databaseReference.child(userID).setValue(newUser)
-                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    .addOnSuccessListener(getActivity(),new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
                             Toast.makeText(getContext(), "User Successfully Created", Toast.LENGTH_SHORT).show();
+                            userCreationDone = true;
+                            done.setDone(userCreationDone,photoUploadDone);
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
@@ -191,12 +199,20 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
         uploadButton.setOnClickListener(this);
 
         Uri.setText(savedURI);
-        nameEditText.setText(savedName);
+        if(savedName != null) nameEditText.setText(savedName);
 
         if (picture != null){
             profileImage.setImageBitmap(picture);
             setPic(profileImage);
         }
+
+        done = new DoneVariable();
+        done.setListener(new DoneVariable.ChangeListener() {
+            @Override
+            public void onChange() {
+                ((MainActivity)getActivity()).FragmentChange(R.id.fragment_place);
+            }
+        });
 
         //Resizes the fragment to fit into its layout
         /*
@@ -322,7 +338,7 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
         if(requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null){
             filepath = data.getData();
             savedURI = filepath.toString();
-            savedName = nameEditText.getText().toString();
+            savedName = nameEditText.getText().toString().trim();
             picture = rotateImage(filepath);
             //Uri.setText(filepath.toString());
             //profileImage.setImageBitmap(rotateImage(filepath));
@@ -331,7 +347,7 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
         else if(requestCode == REQUEST_IMGAE_CAPTURE && resultCode == RESULT_OK){
             picture = rotateImage(filepath);
             savedURI = filepath.toString();
-            savedName = nameEditText.getText().toString();
+            savedName = nameEditText.getText().toString().trim();
             //profileImage.setImageBitmap(rotateImage(filepath));
             //setPic(profileImage);
             //Uri.setText(filepath.toString());
@@ -389,6 +405,12 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
             if (!nameEditText.getText().toString().isEmpty()){
                 uploadPic("profile");
                 createNewUser();
+
+                //
+                //((MainActivity)getActivity()).FragmentChange(R.id.fragment_place);
+                //
+
+
                 //DatabaseReference ref = databaseReference;
                 //ref = ref.child("-L0LnzDbOhM_VHvGTQdf").child("pending").child("0");
                 //ref.setValue("Updated");

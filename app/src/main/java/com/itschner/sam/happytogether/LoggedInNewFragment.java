@@ -92,8 +92,8 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
 
         getActivity().setTitle("Home");
 
-        StorageReference imageRef = storageReference.child(firebaseAuth.getCurrentUser().getEmail() + "/profile.jpg" );
         //Download profile image
+        StorageReference imageRef = storageReference.child(firebaseAuth.getCurrentUser().getEmail() + "/profile.jpg" );
         try{
             final File tmpFile = File.createTempFile("img","jpg");
             imageRef.getFile(tmpFile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
@@ -163,11 +163,13 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
                         String[] partnerArray = new String[partners.size()];
                         partnerArray = partners.toArray(partnerArray);
 
-                        ListAdapter pendingAdapter = new ArrayAdapter<>(getContext(),android.R.layout.simple_list_item_1,pendingArray);
-                        ListAdapter partnerAdapter = new ArrayAdapter<>(getContext(),android.R.layout.simple_list_item_1,partnerArray);
+                        if (partnerArray != null && pendingArray != null){
+                            ListAdapter pendingAdapter = new ArrayAdapter<>(getContext(),android.R.layout.simple_list_item_1,pendingArray);
+                            ListAdapter partnerAdapter = new ArrayAdapter<>(getContext(),android.R.layout.simple_list_item_1,partnerArray);
 
-                        partnerList.setAdapter(partnerAdapter);
-                        pendingList.setAdapter(pendingAdapter);
+                            partnerList.setAdapter(partnerAdapter);
+                            pendingList.setAdapter(pendingAdapter);
+                        }
                     }
                 }
                 @Override

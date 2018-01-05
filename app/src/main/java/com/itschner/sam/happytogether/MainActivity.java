@@ -32,7 +32,6 @@ public class MainActivity extends Template {
     private DatabaseReference databaseReference;
     private BottomNavigationView navigation;
 
-
     public void getCurrentUserID(){
         Query query = databaseReference.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
         query.addValueEventListener(new ValueEventListener() {
@@ -84,7 +83,7 @@ public class MainActivity extends Template {
     public void FragmentChange(final int frag_id){
         if(firebaseAuth.getCurrentUser() != null) {
             Query query = databaseReference.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
-            query.addValueEventListener(new ValueEventListener() {
+            query.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     Iterable<DataSnapshot> children = dataSnapshot.getChildren();
@@ -140,7 +139,6 @@ public class MainActivity extends Template {
     @Override
     public void onResume(){
         super.onResume();
-        FragmentChange(R.id.fragment_place);
         if (firebaseAuth.getCurrentUser() == null && !oneShot){
             navigation.getMenu().removeItem(R.menu.logged_in_new);
             navigation.inflateMenu(R.menu.not_logged_in);
@@ -166,6 +164,12 @@ public class MainActivity extends Template {
             RedirectToLogin(this,firebaseAuth);
             Toast.makeText(this, "A user must be logged in", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    protected void onResumeFragments() {
+        super.onResumeFragments();
+        FragmentChange(R.id.fragment_place);
     }
 
     @Override
