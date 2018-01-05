@@ -59,7 +59,7 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
     private FirebaseAuth firebaseAuth;
     private StorageReference storageReference;
     private Calendar c = Calendar.getInstance();
-    private SimpleDateFormat df = new SimpleDateFormat("yy/MM/dd HH:mm:ss");
+    private SimpleDateFormat df = new SimpleDateFormat("yy-MM-dd HH:mm:ss");
 
     public LoggedInNewFragment() {
         // Required empty public constructor
@@ -139,7 +139,7 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
                     for (DataSnapshot singleSnapshot : children){
                         User user = singleSnapshot.getValue(User.class);
 
-                        String Name = "Hello "+ user.Fname + " " +user.Lname + "!";
+                        String Name = "Hello, "+ user.Fname + " " +user.Lname + "!";
                         userNameTextView.setText(Name);
 
                         List<String> invites = new ArrayList<>(user.pending.values());
@@ -149,12 +149,14 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
                             if (invite.contentEquals("dummy")){
                                 invites.remove(invite);
                             }
+                            //Query inviteQuery = firebaseDatabase.orderByChild("email").equalTo(String.valueOf(invite));//Find name from email
                         }
 
                         for (String partner:partners) {
                             if (partner.contentEquals("dummy")){
                                 partners.remove(partner);
                             }
+                            //Query partnerQuery = firebaseDatabase.orderByChild("email").equalTo((String.valueOf(partner)));//Find name from email
                         }
 
                         String[] pendingArray = new String[invites.size()];
@@ -164,8 +166,8 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
                         partnerArray = partners.toArray(partnerArray);
 
                         if (partnerArray != null && pendingArray != null){
-                            ListAdapter pendingAdapter = new ArrayAdapter<>(getContext(),android.R.layout.simple_list_item_1,pendingArray);
-                            ListAdapter partnerAdapter = new ArrayAdapter<>(getContext(),android.R.layout.simple_list_item_1,partnerArray);
+                            ListAdapter pendingAdapter = new CustomAdapter(getContext(),pendingArray);
+                            ListAdapter partnerAdapter = new CustomAdapter(getContext(),partnerArray);
 
                             partnerList.setAdapter(partnerAdapter);
                             pendingList.setAdapter(pendingAdapter);

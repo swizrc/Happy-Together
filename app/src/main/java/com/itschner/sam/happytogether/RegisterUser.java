@@ -3,6 +3,7 @@ package com.itschner.sam.happytogether;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.support.annotation.NonNull;
+import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -99,8 +100,7 @@ public class RegisterUser extends Template implements View.OnClickListener {
                                 public void onComplete(@NonNull Task<AuthResult> task) {
                                     if (task.isSuccessful()) {
                                         Toast.makeText(RegisterUser.this, "Log in Success", Toast.LENGTH_SHORT).show();
-                                        Intent i = new Intent(RegisterUser.this, UserInfoForm.class);
-                                        startActivity(i);
+                                        NavUtils.navigateUpFromSameTask(RegisterUser.this);
                                     } else {
                                         Toast.makeText(RegisterUser.this, "Log in Failed", Toast.LENGTH_SHORT).show();
                                     }

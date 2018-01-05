@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -31,9 +32,9 @@ import static com.itschner.sam.happytogether.LoggedInNewFragment.rotateImage;
  */
 
 class CustomAdapter extends ArrayAdapter<String> {
+
     CustomAdapter(Context context,String[] items){
         super(context, R.layout.custom_row,items);
-
     }
 
     public void setProfileImage(final ImageView imageView,String email){
@@ -85,6 +86,8 @@ class CustomAdapter extends ArrayAdapter<String> {
         String singleItem = getItem(position);
         TextView textView = customView.findViewById(R.id.nameText);
         ImageView imageView = customView.findViewById(R.id.picImgView);
+        Button acceptButton = customView.findViewById(R.id.acceptButton);
+        Button declineButton = customView.findViewById(R.id.declineButton);
 
         textView.setText(singleItem);
         setProfileImage(imageView,singleItem);
