@@ -8,9 +8,10 @@
     <ImageView
         android:id="@+id/picImgView"
         android:layout_width="40dp"
-        android:layout_height="70dp"
+        android:layout_height="match_parent"
         android:layout_weight="1"
         android:contentDescription="picture"
+        android:scaleType="centerCrop"
         app:srcCompat="@color/common_google_signin_btn_text_dark_focused" />
 
     <LinearLayout
@@ -25,28 +26,17 @@
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
             android:layout_weight="1"
-            android:text="TextView" />
+            android:text="TextView"
+            android:textSize="12sp" />
 
-        <LinearLayout
+        <Button
+            android:id="@+id/deleteButton"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="horizontal">
+            android:text="Remove"
+            android:textSize="10sp" />
 
-            <Button
-                android:id="@+id/acceptButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Accept" />
-
-            <Button
-                android:id="@+id/declineButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Decline" />
-        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>

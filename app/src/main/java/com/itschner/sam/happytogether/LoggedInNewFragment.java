@@ -7,18 +7,12 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.support.media.ExifInterface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -41,7 +35,6 @@ import com.google.firebase.storage.StorageReference;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -60,6 +53,10 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
     private StorageReference storageReference;
     private Calendar c = Calendar.getInstance();
     private SimpleDateFormat df = new SimpleDateFormat("yy-MM-dd HH:mm:ss");
+    private static String nameChange;
+    private static Bitmap profilePic;
+    List<String> invites = new ArrayList<>();
+    List<String> partners = new ArrayList<>();
 
     public LoggedInNewFragment() {
         // Required empty public constructor
@@ -93,38 +90,42 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
         getActivity().setTitle("Home");
 
         //Download profile image
-        StorageReference imageRef = storageReference.child(firebaseAuth.getCurrentUser().getEmail() + "/profile.jpg" );
-        try{
-            final File tmpFile = File.createTempFile("img","jpg");
-            imageRef.getFile(tmpFile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
-                @Override
-                public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-                    Bitmap bitmap = BitmapFactory.decodeFile(tmpFile.getAbsolutePath());
-                    try{
-                        ExifInterface ei = new ExifInterface(tmpFile.getAbsolutePath());
-                        int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
-                                ExifInterface.ORIENTATION_UNDEFINED);
-                        switch (orientation) {
-                            case ExifInterface.ORIENTATION_ROTATE_90:
-                                bitmap = rotateImage(bitmap, 90);
-                                break;
-                            case ExifInterface.ORIENTATION_ROTATE_180:
-                                bitmap = rotateImage(bitmap, 180);
-                                break;
-                            case ExifInterface.ORIENTATION_ROTATE_270:
-                                bitmap = rotateImage(bitmap, 270);
-                                break;
-                            default:
+        if (profilePic == null || !nameChange.contains(firebaseAuth.getCurrentUser().getEmail())) {
+            StorageReference imageRef = storageReference.child(firebaseAuth.getCurrentUser().getEmail() + "/profile.jpg");
+            try {
+                final File tmpFile = File.createTempFile("img", "jpg");
+                imageRef.getFile(tmpFile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                        profilePic = BitmapFactory.decodeFile(tmpFile.getAbsolutePath());
+                        try {
+                            ExifInterface ei = new ExifInterface(tmpFile.getAbsolutePath());
+                            int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                                    ExifInterface.ORIENTATION_UNDEFINED);
+                            switch (orientation) {
+                                case ExifInterface.ORIENTATION_ROTATE_90:
+                                    profilePic = rotateImage(profilePic, 90);
+                                    break;
+                                case ExifInterface.ORIENTATION_ROTATE_180:
+                                    profilePic = rotateImage(profilePic, 180);
+                                    break;
+                                case ExifInterface.ORIENTATION_ROTATE_270:
+                                    profilePic = rotateImage(profilePic, 270);
+                                    break;
+                                default:
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
+                        profileImageView.setImageBitmap(profilePic);
                     }
-                    catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    profileImageView.setImageBitmap(bitmap);
-                }
-            });
-        }catch (Exception e){
-            e.printStackTrace();
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        else{
+            profileImageView.setImageBitmap(profilePic);
         }
 
         inviteButton.setOnClickListener(this);
@@ -140,23 +141,26 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
                         User user = singleSnapshot.getValue(User.class);
 
                         String Name = "Hello, "+ user.Fname + " " +user.Lname + "!";
+                        nameChange = firebaseAuth.getCurrentUser().getEmail();
+
                         userNameTextView.setText(Name);
 
-                        List<String> invites = new ArrayList<>(user.pending.values());
-                        List<String> partners = new ArrayList<>(user.partners.values());
+                        invites.clear();
+                        partners.clear();
+
+                        invites.addAll(user.pending.values());
+                        partners.addAll(user.partners.values());
 
                         for (String invite:invites) {
                             if (invite.contentEquals("dummy")){
                                 invites.remove(invite);
                             }
-                            //Query inviteQuery = firebaseDatabase.orderByChild("email").equalTo(String.valueOf(invite));//Find name from email
                         }
 
                         for (String partner:partners) {
                             if (partner.contentEquals("dummy")){
                                 partners.remove(partner);
                             }
-                            //Query partnerQuery = firebaseDatabase.orderByChild("email").equalTo((String.valueOf(partner)));//Find name from email
                         }
 
                         String[] pendingArray = new String[invites.size()];
@@ -166,8 +170,8 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
                         partnerArray = partners.toArray(partnerArray);
 
                         if (partnerArray != null && pendingArray != null){
-                            ListAdapter pendingAdapter = new CustomAdapter(getContext(),pendingArray);
-                            ListAdapter partnerAdapter = new CustomAdapter(getContext(),partnerArray);
+                            ListAdapter pendingAdapter = new CustomAdapterPending(getContext(),pendingArray);
+                            ListAdapter partnerAdapter = new CustomAdapterPartners(getContext(),partnerArray);
 
                             partnerList.setAdapter(partnerAdapter);
                             pendingList.setAdapter(pendingAdapter);
@@ -185,7 +189,9 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
     public static Bitmap rotateImage(Bitmap source,float angle){
         Matrix matrix = new Matrix();
         matrix.postRotate(angle);
-        return Bitmap.createBitmap(source,0,0,source.getWidth(),source.getHeight(),matrix,true);
+        Bitmap bm = Bitmap.createBitmap(source,0,0,source.getWidth(),source.getHeight(),matrix,true);
+
+        return Bitmap.createScaledBitmap(bm,(int)(bm.getWidth()*0.2),(int)(bm.getHeight()*0.2),true);
     }
 
     public void InviteAlert(){

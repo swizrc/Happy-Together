@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -48,6 +49,7 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -85,6 +87,8 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
         return getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY);
     }
 
+
+
     public void getCurrentUserID(){
         Query query = databaseReference.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
         query.addValueEventListener(new ValueEventListener() {
@@ -114,6 +118,7 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
             progressDialog.setTitle("Uploading...");
             progressDialog.show();
             //"UserProfile/user.jpg"
+
             StorageReference imageRef = storageReference.child(firebaseAuth.getCurrentUser().getEmail() + "/" + name + ".jpg" );
             imageRef.putFile(filepath)
                     .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
@@ -264,7 +269,7 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
         startActivityForResult(i.createChooser(i,"Select Image"),PICK_IMAGE_REQUEST);
     }
 
-    private int dpToPx(int dp) {
+    public int dpToPx(int dp) {
         float density = getActivity().getApplicationContext().getResources().getDisplayMetrics().density;
         return Math.round((float)dp * density);
     }
@@ -348,10 +353,12 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
             picture = rotateImage(filepath);
             savedURI = filepath.toString();
             savedName = nameEditText.getText().toString().trim();
+
             //profileImage.setImageBitmap(rotateImage(filepath));
             //setPic(profileImage);
             //Uri.setText(filepath.toString());
             /*
+
             Bundle extras = data.getExtras();
             Bitmap photo = (Bitmap) extras.get("data");
             profileImage.setImageBitmap(photo);
@@ -359,6 +366,27 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
         }
     }
 
+    public static int calculateInSampleSize(int inWidth,int inHeight, int reqWidth, int reqHeight) {
+        // Raw height and width of image
+        int inSampleSize = 1;
+
+        if (inHeight > reqHeight || inWidth > reqWidth) {
+
+            final int halfHeight = inHeight / 2;
+            final int halfWidth = inWidth / 2;
+
+            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+            // height and width larger than the requested height and width.
+            while ((halfHeight / inSampleSize) >= reqHeight
+                    && (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2;
+            }
+        }
+
+        return inSampleSize;
+    }
+
+    //Scale down image here
     public Bitmap rotateImage (Uri filepath) {
         Bitmap bitmap = null;
         try{
@@ -378,6 +406,7 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
                     bitmap = rotateImage(bitmap, 270);
                     break;
                 default:
+                    bitmap = rotateImage(bitmap, 0);
             }
         }
         catch (IOException e){
@@ -386,9 +415,10 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
         return bitmap;
     }
 
-    public static Bitmap rotateImage(Bitmap source,float angle){
+    public Bitmap rotateImage(Bitmap source,float angle){
         Matrix matrix = new Matrix();
         matrix.postRotate(angle);
+
         return Bitmap.createBitmap(source,0,0,source.getWidth(),source.getHeight(),matrix,true);
     }
 

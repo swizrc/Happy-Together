@@ -12,8 +12,8 @@ public class User{
     public String Lname; //Last Name
     public String userID; //User's unique ID
     public String email; //User's email
-    public Map<String,String> pending; //List of pending user emails
-    public Map<String,String> partners; //List of users this user has been with
+    public Map<String,String> pending; //List of pending user email invites
+    public Map<String,String> partners; //List of users this user is with
     public boolean status; //Whether this user is currently in a relationship
 
     public User(){}

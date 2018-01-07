@@ -32,24 +32,6 @@ public class MainActivity extends Template {
     private DatabaseReference databaseReference;
     private BottomNavigationView navigation;
 
-    public void getCurrentUserID(){
-        Query query = databaseReference.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
-        query.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                Iterable<DataSnapshot> children = dataSnapshot.getChildren();
-                for (DataSnapshot singleSnapshot : children){
-                    User user = singleSnapshot.getValue(User.class);
-                    //Uri.setText(user.getUserID());
-                }
-            }
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-    }
-
     @Override
     public boolean onPrepareOptionsMenu(Menu menu){
         if (firebaseAuth.getCurrentUser()!=null && menu.findItem(R.id.action_logout)==null){
