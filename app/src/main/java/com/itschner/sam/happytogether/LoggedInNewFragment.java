@@ -10,6 +10,7 @@ import android.graphics.Matrix;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.media.ExifInterface;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,6 +40,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 
 public class LoggedInNewFragment extends Fragment implements View.OnClickListener {
 
@@ -48,6 +50,7 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
     private ListView pendingList;
     private ListView partnerList;
     private DatabaseReference firebaseDatabase;
+    private DatabaseReference relationshipDatabase;
     private DatabaseReference ref;
     private FirebaseAuth firebaseAuth;
     private StorageReference storageReference;
@@ -55,6 +58,8 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
     private SimpleDateFormat df = new SimpleDateFormat("yy-MM-dd HH:mm:ss");
     private static String nameChange;
     private static Bitmap profilePic;
+    private String userID;
+    private int count = 0;
     List<String> invites = new ArrayList<>();
     List<String> partners = new ArrayList<>();
 
@@ -80,6 +85,7 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
         super.onViewCreated(view, savedInstanceState);
         storageReference = FirebaseStorage.getInstance().getReference();
         firebaseDatabase = FirebaseDatabase.getInstance().getReference("users");
+        relationshipDatabase = FirebaseDatabase.getInstance().getReference("relationships");
         firebaseAuth = FirebaseAuth.getInstance();
         inviteButton = (Button) getView().findViewById(R.id.inviteButton);
         userNameTextView = getView().findViewById(R.id.userName);
@@ -213,7 +219,6 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
             @Override
             public void onClick(View view) {
                 if(!email.getText().toString().isEmpty()){
-                    //FIXED
                     final String emailText = email.getText().toString().trim();
                     final String date = df.format(c.getTime());
                     Query query = ref.orderByChild("email").equalTo(emailText);
@@ -222,19 +227,31 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
                         public void onDataChange(DataSnapshot dataSnapshot) {
                             Iterable<DataSnapshot> children = dataSnapshot.getChildren();
                             if (dataSnapshot.getChildrenCount() == 0){
-                                Toast.makeText(context, "This user's email was not found", Toast.LENGTH_SHORT).show();
+                                Toast toast = Toast.makeText(context, "This user's email was not found", Toast.LENGTH_SHORT);
+                                toast.setGravity(Gravity.CENTER,0,0);
+                                toast.show();
                             }
                             else {
                                 for (DataSnapshot singleSnapshot : children) {
                                     if (!firebaseAuth.getCurrentUser().getEmail().contains(emailText)) {
                                         User recUser = singleSnapshot.getValue(User.class);
-                                        ref = ref.child(recUser.userID).child("pending");
-                                        ref.child(date).setValue(firebaseAuth.getCurrentUser().getEmail());
-                                        Toast.makeText(context, "Sent", Toast.LENGTH_SHORT).show();
-                                        dialog.dismiss();
+                                        Map<String,String> pending = recUser.pending;
+                                        if(!pending.containsValue(firebaseAuth.getCurrentUser().getEmail())){
+                                            ref = ref.child(recUser.userID).child("pending");
+                                            ref.child(date).setValue(firebaseAuth.getCurrentUser().getEmail());
+                                            Toast.makeText(context, "Sent", Toast.LENGTH_SHORT).show();
+                                            dialog.dismiss();
+                                        }
+                                        else{
+                                            Toast toast = Toast.makeText(context, "Pending invitation already exists", Toast.LENGTH_SHORT);
+                                            toast.setGravity(Gravity.CENTER,0,0);
+                                            toast.show();
+                                        }
                                     }
                                     else {
-                                        Toast.makeText(context, "Cannot send invite to self!", Toast.LENGTH_SHORT).show();
+                                        Toast toast = Toast.makeText(context, "Cannot send invite to self!", Toast.LENGTH_SHORT);
+                                        toast.setGravity(Gravity.CENTER,0,0);
+                                        toast.show();
                                     }
                                 }
                             }
@@ -253,10 +270,144 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
         dialog.show();
     }
 
+    public void RelationshipAlert(){
+        ref = firebaseDatabase;
+        final List<String> invites = new ArrayList<>();
+        final Context context = getContext();
+        final AlertDialog dialog = new AlertDialog.Builder(getActivity()).create();
+        LayoutInflater inflater = LayoutInflater.from(getActivity());
+        View view = inflater.inflate(R.layout.dialog_relationship_creation,null);
+        final EditText relationshipName = (EditText) view.findViewById(R.id.relationshipName);
+        final EditText email = (EditText) view.findViewById(R.id.inviteEmail);
+        final TextView inviteCount = view.findViewById(R.id.inviteCount);
+        Button inviteButton = (Button) view.findViewById(R.id.sendInvite);
+        Button cancelButton = (Button) view.findViewById(R.id.cancelButton);
+        Button createRelationship = view.findViewById(R.id.createRel);
+        createRelationship.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(count != 0){
+                    if(!relationshipName.getText().toString().isEmpty()){
+                        //Get original user ID, use if statement with a query to get it?
+                        Query query = ref.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
+                        query.addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                Iterable<DataSnapshot> children = dataSnapshot.getChildren();
+                                for (DataSnapshot child:children) {
+                                    User user = child.getValue(User.class);
+                                    userID = user.getUserID();
+                                }
+                            }
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        });
+                        //Automatically add the current user to the invite list
+                        invites.add(firebaseAuth.getCurrentUser().getEmail());
+                        final String pushID = relationshipDatabase.push().getKey();
+                        final String name = relationshipName.getText().toString();
+                        Relationship relationship = new Relationship(name,pushID,userID);
+                        relationshipDatabase.child(pushID).setValue(relationship);
+                        for (String invite:invites) {
+                            query = ref.orderByChild("email").equalTo(invite);
+                            query.addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                    Iterable<DataSnapshot> children = dataSnapshot.getChildren();
+                                    for (DataSnapshot child:children) {
+                                        User user = child.getValue(User.class);
+                                        ref.child(user.getUserID()).child("pending").child(pushID).setValue(firebaseAuth.getCurrentUser().getEmail()).addOnSuccessListener(getActivity(), new OnSuccessListener<Void>() {
+                                            @Override
+                                            public void onSuccess(Void aVoid) {
+                                                Toast.makeText(context, "Relationship Created", Toast.LENGTH_SHORT).show();
+                                                dialog.dismiss();
+                                            }
+                                        });
+                                    }
+                                }
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+
+                                }
+                            });
+                        }
+                    }
+                    else{
+                        Toast.makeText(context, "The relationship needs a name!", Toast.LENGTH_SHORT).show();
+                    }
+                }
+                else{
+                    Toast.makeText(context, "No emails selected for invitations", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
+        inviteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(!email.getText().toString().isEmpty()){
+                    final String emailText = email.getText().toString().trim();
+                    Query query = ref.orderByChild("email").equalTo(emailText);
+                    query.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            Iterable<DataSnapshot> children = dataSnapshot.getChildren();
+                            if (dataSnapshot.getChildrenCount() == 0){
+                                Toast toast = Toast.makeText(context, "This user's email was not found", Toast.LENGTH_SHORT);
+                                toast.setGravity(Gravity.CENTER,0,0);
+                                toast.show();
+                            }
+                            else {
+                                for (DataSnapshot singleSnapshot : children) {
+                                    if (!firebaseAuth.getCurrentUser().getEmail().contains(emailText)) {
+                                        if(!invites.contains(emailText)){
+                                            invites.add(emailText);
+                                            count++;
+                                            inviteCount.setText("User(s) to Invite: " + Integer.toString(count));
+                                            Toast.makeText(context, "Invitation Created", Toast.LENGTH_SHORT).show();
+                                            email.getText().clear();
+                                        }
+                                        else{
+                                            Toast toast = Toast.makeText(context, "This invite already exists", Toast.LENGTH_SHORT);
+                                            toast.setGravity(Gravity.CENTER,0,0);
+                                            toast.show();
+                                        }
+                                    }
+                                    else {
+                                        Toast toast = Toast.makeText(context, "Cannot send invite to self!", Toast.LENGTH_SHORT);
+                                        toast.setGravity(Gravity.CENTER,0,0);
+                                        toast.show();
+                                    }
+                                }
+                            }
+                        }
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+
+                        }
+                    });
+                }else {
+                    Toast.makeText(getContext(), "Please Enter the user's email", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        dialog.setView(view);
+        dialog.show();
+
+    }
+
     @Override
     public void onClick(View view) {
         if (view == inviteButton){
-            InviteAlert();
+            RelationshipAlert();
         }
     }
 }

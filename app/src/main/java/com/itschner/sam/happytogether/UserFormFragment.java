@@ -87,8 +87,6 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
         return getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY);
     }
 
-
-
     public void getCurrentUserID(){
         Query query = databaseReference.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
         query.addValueEventListener(new ValueEventListener() {
@@ -423,7 +421,7 @@ public class UserFormFragment extends Fragment implements View.OnClickListener {
     }
 
 
-        @Override
+    @Override
     public void onClick(View view) {
         if(view == galleryButton){
             showFileChooser();
