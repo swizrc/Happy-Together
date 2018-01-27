@@ -5,7 +5,15 @@ package com.itschner.sam.happytogether;
  */
 
 public class Event {
-    private String title;
-    private float score;
-    private String description;
+    public String title;
+    public float score;
+    public String description;
+
+    Event (String title,String description){
+        this.title = title;
+        this.score = 0;
+        this.description = description;
+    }
+
+    public Event(){}
 }

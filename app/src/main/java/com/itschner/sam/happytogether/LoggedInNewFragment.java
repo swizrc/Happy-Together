@@ -271,6 +271,7 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
     }
 
     public void RelationshipAlert(){
+        count = 0;
         ref = firebaseDatabase;
         final List<String> invites = new ArrayList<>();
         final Context context = getContext();
@@ -283,56 +284,53 @@ public class LoggedInNewFragment extends Fragment implements View.OnClickListene
         Button inviteButton = (Button) view.findViewById(R.id.sendInvite);
         Button cancelButton = (Button) view.findViewById(R.id.cancelButton);
         Button createRelationship = view.findViewById(R.id.createRel);
+        Query query = ref.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Iterable<DataSnapshot> children = dataSnapshot.getChildren();
+                for (DataSnapshot child:children) {
+                    User user = child.getValue(User.class);
+                    userID = user.userID;
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
         createRelationship.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if(count != 0){
                     if(!relationshipName.getText().toString().isEmpty()){
                         //Get original user ID, use if statement with a query to get it?
-                        Query query = ref.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
-                        query.addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
-                                Iterable<DataSnapshot> children = dataSnapshot.getChildren();
-                                for (DataSnapshot child:children) {
-                                    User user = child.getValue(User.class);
-                                    userID = user.getUserID();
-                                }
-                            }
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-
-                            }
-                        });
-                        //Automatically add the current user to the invite list
-                        invites.add(firebaseAuth.getCurrentUser().getEmail());
                         final String pushID = relationshipDatabase.push().getKey();
                         final String name = relationshipName.getText().toString();
-                        Relationship relationship = new Relationship(name,pushID,userID);
+                        final Relationship relationship = new Relationship(name,pushID,userID);
+                        relationship.partners.put(userID,firebaseAuth.getCurrentUser().getEmail());
+                        ref.child(userID).child("partners").child(pushID).setValue(firebaseAuth.getCurrentUser().getEmail());
                         relationshipDatabase.child(pushID).setValue(relationship);
                         for (String invite:invites) {
-                            query = ref.orderByChild("email").equalTo(invite);
+                            Query query = ref.orderByChild("email").equalTo(invite);
                             query.addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(DataSnapshot dataSnapshot) {
                                     Iterable<DataSnapshot> children = dataSnapshot.getChildren();
                                     for (DataSnapshot child:children) {
                                         User user = child.getValue(User.class);
-                                        ref.child(user.getUserID()).child("pending").child(pushID).setValue(firebaseAuth.getCurrentUser().getEmail()).addOnSuccessListener(getActivity(), new OnSuccessListener<Void>() {
-                                            @Override
-                                            public void onSuccess(Void aVoid) {
-                                                Toast.makeText(context, "Relationship Created", Toast.LENGTH_SHORT).show();
-                                                dialog.dismiss();
-                                            }
-                                        });
+                                        relationshipDatabase.child(pushID).child("pending").child(user.userID).setValue(user.email);
+                                        ref.child(user.getUserID()).child("pending").child(pushID).setValue(firebaseAuth.getCurrentUser().getEmail());
                                     }
                                 }
                                 @Override
                                 public void onCancelled(DatabaseError databaseError) {
-
                                 }
                             });
                         }
+                        Toast.makeText(context, "Relationship Created", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
                     }
                     else{
                         Toast.makeText(context, "The relationship needs a name!", Toast.LENGTH_SHORT).show();

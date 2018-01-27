@@ -40,6 +40,7 @@ class CustomAdapterPartners extends ArrayAdapter<String> {
 
     private FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
     private DatabaseReference firebaseDatabase = FirebaseDatabase.getInstance().getReference("users");
+    private DatabaseReference relationshipDatabase = FirebaseDatabase.getInstance().getReference("relationships");
 
     Map<String,Bitmap> downloadedImages = new ArrayMap<>();
 
@@ -94,7 +95,7 @@ class CustomAdapterPartners extends ArrayAdapter<String> {
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        PartnersHolder holder;
+        final PartnersHolder holder;
 
         if(convertView == null){
             LayoutInflater inflater = LayoutInflater.from(getContext());
@@ -110,10 +111,44 @@ class CustomAdapterPartners extends ArrayAdapter<String> {
         }
 
         final String singleItem = getItem(position);
+        Query query = firebaseDatabase.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Iterable<DataSnapshot> children = dataSnapshot.getChildren();
+                for (DataSnapshot singleSnapshot : children){
+                    User user = singleSnapshot.getValue(User.class);
+                    for(String relID:user.partners.keySet()){
+                        if(user.partners.get(relID).equals(singleItem)){
+                            Query query1 = relationshipDatabase.orderByChild("ID").equalTo(relID);
+                            query1.addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                    Iterable<DataSnapshot> children = dataSnapshot.getChildren();
+                                    for(DataSnapshot singleSnapshot:children){
+                                        Relationship relationship = singleSnapshot.getValue(Relationship.class);
+                                        holder.nameView.setText(relationship.name);
+                                    }
+                                }
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
 
         holder.nameView.setText(singleItem);
         setProfileImage(holder.imageView,singleItem);
 
+        //Need to clean up pending invites in users too
         holder.removeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -123,21 +158,40 @@ class CustomAdapterPartners extends ArrayAdapter<String> {
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         Iterable<DataSnapshot> children = dataSnapshot.getChildren();
                         for (DataSnapshot singleSnapshot : children){
-                            User user = singleSnapshot.getValue(User.class);
-                            for(String num:user.partners.keySet()){
-                                if(user.partners.get(num).equals(singleItem)){
-                                    firebaseDatabase.child(user.getUserID()).child("partners").child(num).removeValue();
+                            final User user = singleSnapshot.getValue(User.class);
+                            for(final String relID:user.partners.keySet()){
+                                if(user.partners.get(relID).equals(singleItem)){
+                                    firebaseDatabase.child(user.getUserID()).child("partners").child(relID).removeValue();
+                                    relationshipDatabase.child(relID).child("partners").child(user.getUserID()).removeValue();
+                                    Query query1 = relationshipDatabase.orderByChild("ID").equalTo(relID);
+                                    query1.addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot) {
+                                            final Iterable<DataSnapshot> children = dataSnapshot.getChildren();
+                                            for(DataSnapshot singleSnapshot:children){
+                                                Relationship relationship = singleSnapshot.getValue(Relationship.class);
+                                                if(relationship.partners.size() <= 1){
+                                                    for (String userID:relationship.pending.keySet()) {
+                                                        firebaseDatabase.child(userID).child("pending").child(relationship.ID).removeValue();
+                                                    }
+                                                    //Use pending table to clean up invites
+                                                    relationshipDatabase.child(relID).removeValue();
+                                                }
+                                            }
+                                        }
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+                                        }
+                                    });
                                 }
                             }
-
                         }
                     }
-
                     @Override
                     public void onCancelled(DatabaseError databaseError) {
-
                     }
                 });
+
             }
         });
 

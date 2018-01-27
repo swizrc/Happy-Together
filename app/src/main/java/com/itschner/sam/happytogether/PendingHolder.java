@@ -9,7 +9,8 @@ import android.widget.TextView;
  */
 
 public class PendingHolder {
-    TextView nameView;
+    TextView userNameView;
+    TextView relNameView;
     ImageView imageView;
     Button acceptButton;
     Button declineButton;

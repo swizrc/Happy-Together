@@ -29,6 +29,8 @@ import com.google.firebase.storage.StorageReference;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static com.itschner.sam.happytogether.LoggedInNewFragment.rotateImage;
@@ -41,6 +43,7 @@ class CustomAdapterPending extends ArrayAdapter<String> {
 
     private FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
     private DatabaseReference firebaseDatabase = FirebaseDatabase.getInstance().getReference("users");
+    private DatabaseReference relationshipDatabase = FirebaseDatabase.getInstance().getReference("relationships");
 
     Map<String,Bitmap> downloadedImages = new ArrayMap<>();
 
@@ -97,14 +100,14 @@ class CustomAdapterPending extends ArrayAdapter<String> {
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        PendingHolder holder;
+        final PendingHolder holder;
 
         if(convertView == null){
             LayoutInflater inflater = LayoutInflater.from(getContext());
             convertView = inflater.inflate(R.layout.custom_row_pending,parent,false);
             holder = new PendingHolder();
-
-            holder.nameView = convertView.findViewById(R.id.nameText);
+            holder.relNameView = convertView.findViewById(R.id.relNameText);
+            holder.userNameView = convertView.findViewById(R.id.userNameText);
             holder.imageView = convertView.findViewById(R.id.picImgView);
             holder.acceptButton = convertView.findViewById(R.id.acceptButton);
             holder.declineButton = convertView.findViewById(R.id.declineButton);
@@ -115,7 +118,41 @@ class CustomAdapterPending extends ArrayAdapter<String> {
 
         final String singleItem = getItem(position);
 
-        holder.nameView.setText(singleItem);
+        Query query = firebaseDatabase.orderByChild("email").equalTo(firebaseAuth.getCurrentUser().getEmail());
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Iterable<DataSnapshot> children = dataSnapshot.getChildren();
+                for (DataSnapshot singleSnapshot : children){
+                    User user = singleSnapshot.getValue(User.class);
+                    for(String relID:user.pending.keySet()){
+                        if(user.pending.get(relID).equals(singleItem)){
+                            Query query1 = relationshipDatabase.orderByChild("ID").equalTo(relID);
+                            query1.addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                    Iterable<DataSnapshot> children = dataSnapshot.getChildren();
+                                    for(DataSnapshot singleSnapshot:children){
+                                        Relationship relationship = singleSnapshot.getValue(Relationship.class);
+                                        holder.relNameView.setText(relationship.name);
+                                    }
+                                }
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+        holder.userNameView.setText(singleItem);
+
         setProfileImage(holder.imageView,singleItem);
 
         holder.acceptButton.setOnClickListener(new View.OnClickListener() {
@@ -128,25 +165,16 @@ class CustomAdapterPending extends ArrayAdapter<String> {
                         Iterable<DataSnapshot> children = dataSnapshot.getChildren();
                         for (DataSnapshot singleSnapshot : children){
                             User user = singleSnapshot.getValue(User.class);
-                            for(String date:user.pending.keySet()){
-                                if(user.pending.get(date).equals(singleItem)){
-                                    int temp_num = 0;
-                                    for(String highest: user.partners.keySet()){
-                                        if(!highest.contains("dummy")){
-                                            if(Integer.parseInt(highest)>temp_num)
-                                                temp_num = Integer.parseInt(highest);
-                                        }
-
-                                    }
-                                    temp_num = temp_num + 1;
-                                    firebaseDatabase.child(user.getUserID()).child("partners").child(Integer.toString(temp_num)).setValue(user.pending.get(date));
-                                    firebaseDatabase.child(user.getUserID()).child("pending").child(date).removeValue();
+                            for(String relID:user.pending.keySet()){
+                                if(user.pending.get(relID).equals(singleItem)){
+                                    firebaseDatabase.child(user.getUserID()).child("partners").child(relID).setValue(user.pending.get(relID));
+                                    firebaseDatabase.child(user.getUserID()).child("pending").child(relID).removeValue();
+                                    relationshipDatabase.child(relID).child("partners").child(user.getUserID()).setValue(user.email);
+                                    relationshipDatabase.child(relID).child("pending").child(user.getUserID()).removeValue();
                                 }
                             }
-
                         }
                     }
-
                     @Override
                     public void onCancelled(DatabaseError databaseError) {
 
@@ -164,15 +192,15 @@ class CustomAdapterPending extends ArrayAdapter<String> {
                         Iterable<DataSnapshot> children = dataSnapshot.getChildren();
                         for (DataSnapshot singleSnapshot : children){
                             User user = singleSnapshot.getValue(User.class);
-                            for(String date:user.pending.keySet()){
-                                if(user.pending.get(date).equals(singleItem)){
-                                    firebaseDatabase.child(user.getUserID()).child("pending").child(date).removeValue();
+                            for(String relID:user.pending.keySet()){
+                                if(user.pending.get(relID).equals(singleItem)){
+                                    firebaseDatabase.child(user.getUserID()).child("pending").child(relID).removeValue();
+                                    relationshipDatabase.child(relID).child("pending").child(user.getUserID()).removeValue();
                                 }
                             }
 
                         }
                     }
-
                     @Override
                     public void onCancelled(DatabaseError databaseError) {
 
